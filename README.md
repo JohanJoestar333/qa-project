@@ -2,6 +2,8 @@
 
 QA Cart is a small online store I built as the **system under test for my QA portfolio**. It is not a real shop. It exists so I can show how I approach test design, manual testing and Playwright automation against a realistic but fully predictable application.
 
+**Live demo:** https://qa-project-automation.vercel.app/
+
 Everything about it is deterministic: one test user, three products, no backend, fixed pricing rules, and a stable `data-testid` on every element worth asserting.
 
 ## What this project is for
@@ -173,6 +175,70 @@ src/
 ```
 
 Built with React, TypeScript, Vite, Tailwind CSS and React Router.
+
+## Branching and deployment
+
+The project is deployed on Vercel from GitHub. Changes reach production in two steps:
+
+| Branch | Purpose | Vercel deployment |
+|---|---|---|
+| `main` | Production, always stable | Production URL |
+| `staging` | Integration branch where changes are checked first | Preview deployment with its own stable URL |
+| `feature/*` | One change per branch | Preview deployment for each pull request |
+
+### Workflow
+
+1. Branch off `staging`:
+   ```bash
+   git checkout staging
+   git pull
+   git checkout -b feature/short-description
+   ```
+2. Commit, push and open a pull request into `staging`.
+3. Check the preview link Vercel posts on the pull request, then merge.
+4. Check the `staging` deployment.
+5. Open a pull request from `staging` into `main`. Merging it publishes to production.
+
+Nothing is pushed straight to `main`.
+
+### Setting up Vercel
+
+1. Sign in at vercel.com with GitHub and choose **Add New, then Project**.
+2. Import the repository. Vercel detects Vite and fills in the build settings (`npm run build`, output `dist`).
+3. Confirm the production branch under **Settings, then Git, then Production Branch**. It should be `main`.
+4. Click **Deploy**.
+
+After that, Vercel builds every push automatically:
+
+- Pushes to `main` become the production site.
+- Pushes to any other branch, including `staging`, become preview deployments.
+- Every pull request gets its own preview, and Vercel comments the link on the PR.
+
+`vercel.json` sends all routes to `index.html`, so refreshing on a page like `/cart` works.
+
+### Finding the staging URL
+
+Vercel gives every branch a stable URL that always shows the latest deployment of that branch:
+
+```
+<project-name>-git-<branch-name>-<scope>.vercel.app
+```
+
+For this project the staging branch is `staging`, so look for the address starting with `qa-project-automation-git-staging-`. To find the exact link:
+
+- Open the project in Vercel and go to **Deployments**.
+- Filter by the `staging` branch, open the latest deployment and click **Visit**.
+- Or click **Visit Preview** in the Vercel comment on any pull request.
+
+If the `staging` branch does not show up in Vercel, it was probably created from `main` and has no commit of its own yet. Vercel skips commits it has already deployed, so push a new one:
+
+```bash
+git checkout staging
+git commit --allow-empty -m "Trigger staging deployment"
+git push
+```
+
+If a preview asks you to log in, Vercel's Deployment Protection is on. It can be changed under **Settings, then Deployment Protection**.
 
 ## License
 
