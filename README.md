@@ -173,3 +173,7 @@ src/
 ```
 
 Built with React, TypeScript, Vite, Tailwind CSS and React Router.
+
+## License
+
+Released under the [MIT License](LICENSE).
