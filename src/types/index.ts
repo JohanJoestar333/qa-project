@@ -28,7 +28,6 @@ export interface Product {
   formattedPrice: string;
   description: string;
   stock: number;
-  category: string;
   image: string;
   tag?: string;
 }

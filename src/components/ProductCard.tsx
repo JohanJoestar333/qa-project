@@ -55,7 +55,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             src={product.image}
             alt={product.name}
             data-testid={`product-image-${product.id}`}
-            referrerPolicy="no-referrer"
             loading="lazy"
             onError={() => setImageError(true)}
             className={`card-image w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}`}

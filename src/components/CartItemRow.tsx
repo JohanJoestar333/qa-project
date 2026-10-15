@@ -32,7 +32,6 @@ export const CartItemRow: React.FC<CartItemRowProps> = ({ item }) => {
               src={product.image}
               alt={product.name}
               data-testid={`cart-item-image-${product.id}`}
-              referrerPolicy="no-referrer"
               onError={() => setImageError(true)}
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
             />

@@ -11,7 +11,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     formattedPrice: '$39.99',
     description: 'A comfortable everyday hoodie with a relaxed fit and soft fabric.',
     stock: 50,
-    category: 'Outerwear',
     image: hoodieImage,
     tag: 'Best Seller',
   },
@@ -22,7 +21,6 @@ export const INITIAL_PRODUCTS: Product[] = [
     formattedPrice: '$34.99',
     description: 'A versatile crewneck sweatshirt designed for everyday comfort.',
     stock: 50,
-    category: 'Sweatshirts',
     image: sweatshirtImage,
     tag: 'Classic Fit',
   },
@@ -33,13 +31,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     formattedPrice: '$19.99',
     description: 'A simple, lightweight cotton T-shirt suitable for everyday wear.',
     stock: 50,
-    category: 'Basics',
     image: tshirtImage,
     tag: 'Pure Cotton',
   },
 ];
-
-export const PRODUCTS = INITIAL_PRODUCTS;
 
 export const getProductById = (id: string): Product | undefined => {
   return INITIAL_PRODUCTS.find((p) => p.id === id);
