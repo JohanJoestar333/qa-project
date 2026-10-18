@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { getLineId } from '../data/products';
 import { formatCurrency, TAX_RATE_PERCENT } from '../utils/currency';
 
 export const OrderConfirmationPage: React.FC = () => {
@@ -58,30 +59,41 @@ export const OrderConfirmationPage: React.FC = () => {
         <section className="py-6">
           <h2 className="text-[19px] text-ink mb-4">Purchased Items</h2>
           <div data-testid="order-confirmation-items" className="divide-y divide-line">
-            {lastOrder.items.map((item) => (
-              <div
-                key={item.id}
-                data-testid={`confirmed-item-${item.id}`}
-                className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-4 min-w-0">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="w-14 h-14 rounded-xl object-cover bg-fill shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-[15px] text-ink">{item.name}</p>
-                    <p className="text-[13px] text-ink-2">
-                      Qty: <span className="tabular-nums">{item.quantity}</span> × {formatCurrency(item.unitPriceCents)}
-                    </p>
+            {lastOrder.items.map((item) => {
+              const lineId = getLineId(item.id, item.colorId, item.sizeId);
+              return (
+                <div
+                  key={lineId}
+                  data-testid={`confirmed-item-${lineId}`}
+                  className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <img
+                      src={item.image}
+                      alt={`${item.name} in ${item.colorName}, size ${item.sizeName}`}
+                      className="w-14 h-14 rounded-xl object-cover bg-fill shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[15px] text-ink">{item.name}</p>
+                      <p className="text-[13px] text-ink-2">
+                        Color:{' '}
+                        <span data-testid={`confirmed-item-color-${lineId}`}>{item.colorName}</span>
+                      </p>
+                      <p className="text-[13px] text-ink-2">
+                        Size:{' '}
+                        <span data-testid={`confirmed-item-size-${lineId}`}>{item.sizeName}</span>
+                      </p>
+                      <p className="text-[13px] text-ink-2">
+                        Qty: <span className="tabular-nums">{item.quantity}</span> × {formatCurrency(item.unitPriceCents)}
+                      </p>
+                    </div>
                   </div>
+                  <span className="text-[15px] text-ink tabular-nums shrink-0">
+                    {formatCurrency(item.subtotalCents)}
+                  </span>
                 </div>
-                <span className="text-[15px] text-ink tabular-nums shrink-0">
-                  {formatCurrency(item.subtotalCents)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

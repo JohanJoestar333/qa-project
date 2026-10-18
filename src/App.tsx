@@ -10,6 +10,7 @@ import { QAHelperDrawer } from './components/QAHelperDrawer';
 import { ScrollToTop } from './components/ScrollToTop';
 import { LoginPage } from './pages/LoginPage';
 import { ProductsPage } from './pages/ProductsPage';
+import { ProductPage } from './pages/ProductPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { OrderConfirmationPage } from './pages/OrderConfirmationPage';
@@ -33,6 +34,7 @@ export default function App() {
                   <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/products" element={<ProtectedRoute><ProductsPage /></ProtectedRoute>} />
+                    <Route path="/products/:productId" element={<ProtectedRoute><ProductPage /></ProtectedRoute>} />
                     <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
                     <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
                     <Route path="/order-confirmation" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />

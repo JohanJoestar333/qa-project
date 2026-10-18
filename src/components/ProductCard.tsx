@@ -1,63 +1,52 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
-import { useToast } from '../context/ToastContext';
+import { getProductColor } from '../data/products';
+import { ColorSwatches } from './ColorSwatches';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const { addItem, items } = useCart();
-  const { showToast } = useToast();
+  const { getQuantityInCart } = useCart();
+  const [colorId, setColorId] = useState(product.colors[0].id);
   const [imageError, setImageError] = useState(false);
-  const [isAddedFeedback, setIsAddedFeedback] = useState(false);
 
-  const cartItem = items.find((item) => item.product.id === product.id);
-  const currentQuantityInCart = cartItem ? cartItem.quantity : 0;
+  const color = getProductColor(product, colorId);
+  const productPath = `/products/${product.id}?color=${color.id}`;
+
+  const currentQuantityInCart = getQuantityInCart(product.id);
   const isOutOfStock = product.stock <= 0;
-  const isMaxStockReached = isOutOfStock || currentQuantityInCart >= product.stock;
 
-  const handleAddToCart = () => {
-    if (isMaxStockReached) return;
-
-    const result = addItem(product, 1);
-    if (result.success) {
-      showToast({
-        title: 'Added to cart',
-        detail: product.name,
-        actionLabel: 'View Cart',
-        actionTo: '/cart',
-      });
-      setIsAddedFeedback(true);
-      setTimeout(() => setIsAddedFeedback(false), 1200);
-    }
+  const handleColorSelect = (nextColorId: string) => {
+    setColorId(nextColorId);
+    setImageError(false);
   };
 
   const stockTone = isOutOfStock ? 'text-danger' : product.stock <= 5 ? 'text-warning' : 'text-ink-2';
-
-  const buttonLabel = isAddedFeedback
-    ? 'Added'
-    : isOutOfStock
-    ? 'Out of Stock'
-    : isMaxStockReached
-    ? 'Max Limit'
-    : 'Add to Cart';
 
   return (
     <article
       data-testid={`product-card-${product.id}`}
       className="card-hover flex flex-col h-full bg-surface rounded-[22px] overflow-hidden"
     >
-      <div className="relative aspect-[4/3] w-full bg-fill overflow-hidden">
+      <Link
+        to={productPath}
+        data-testid={`product-link-${product.id}`}
+        aria-label={`View ${product.name}`}
+        className="relative block aspect-[4/3] w-full bg-fill overflow-hidden"
+      >
         {!imageError ? (
           <img
-            src={product.image}
-            alt={product.name}
+            key={color.id}
+            src={color.image}
+            alt={`${product.name} in ${color.name}`}
             data-testid={`product-image-${product.id}`}
             loading="lazy"
             onError={() => setImageError(true)}
-            className={`card-image w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}`}
+            className={`card-image fade-in w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-60' : ''}`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center p-6 text-sm text-ink-3">
@@ -82,19 +71,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             Sold Out
           </span>
         )}
-      </div>
+      </Link>
 
       <div className="flex flex-col flex-1 p-6">
-        <h3 data-testid={`product-name-${product.id}`} className="text-[19px] leading-snug text-ink">
-          {product.name}
+        <h3 className="text-[19px] leading-snug text-ink">
+          <Link to={productPath} data-testid={`product-name-${product.id}`} className="hover:underline">
+            {product.name}
+          </Link>
         </h3>
         <p data-testid={`product-description-${product.id}`} className="text-sm text-ink-2 mt-1 line-clamp-2">
           {product.description}
         </p>
 
-        <p data-testid={`product-price-${product.id}`} className="text-[17px] text-ink tabular-nums mt-4">
-          {product.formattedPrice}
-        </p>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <p data-testid={`product-price-${product.id}`} className="text-[17px] text-ink tabular-nums">
+            {product.formattedPrice}
+          </p>
+          <ColorSwatches
+            colors={product.colors}
+            selectedId={color.id}
+            onSelect={handleColorSelect}
+            testIdPrefix={`card-color-${product.id}`}
+          />
+        </div>
 
         <div className="mt-5 flex items-center justify-between gap-3">
           <p className="text-[13px] tabular-nums">
@@ -108,15 +107,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             )}
           </p>
 
-          <button
-            type="button"
-            onClick={handleAddToCart}
-            disabled={isMaxStockReached}
-            data-testid={`add-to-cart-${product.id}`}
-            className="btn btn-primary"
-          >
-            {buttonLabel}
-          </button>
+          {isOutOfStock ? (
+            <button type="button" disabled data-testid={`select-options-${product.id}`} className="btn btn-primary">
+              Out of Stock
+            </button>
+          ) : (
+            <Link to={productPath} data-testid={`select-options-${product.id}`} className="btn btn-primary">
+              Select Options
+            </Link>
+          )}
         </div>
       </div>
     </article>
