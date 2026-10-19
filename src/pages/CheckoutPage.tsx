@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { SAVED_DELIVERY_ADDRESS, SAVED_PAYMENT_METHOD } from '../data/mockUser';
 import { OrderSummary } from '../components/OrderSummary';
+import { getLineId, getProductColor, getProductSize } from '../data/products';
 import { formatCurrency, calculateItemSubtotal } from '../utils/currency';
 
 export const CheckoutPage: React.FC = () => {
@@ -125,37 +126,50 @@ export const CheckoutPage: React.FC = () => {
 
               {items.length > 0 ? (
                 <div data-testid="checkout-items-list" className="divide-y divide-line">
-                  {items.map((item) => (
-                    <div
-                      key={item.product.id}
-                      data-testid={`checkout-item-${item.product.id}`}
-                      className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <img
-                          src={item.product.image}
-                          alt={item.product.name}
-                          className="w-14 h-14 rounded-xl object-cover bg-fill shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-[15px] text-ink truncate">{item.product.name}</p>
-                          <p className="text-[13px] text-ink-2">
-                            Qty:{' '}
-                            <span data-testid={`checkout-item-quantity-${item.product.id}`} className="tabular-nums">
-                              {item.quantity}
-                            </span>{' '}
-                            × {item.product.formattedPrice}
-                          </p>
-                        </div>
-                      </div>
-                      <span
-                        data-testid={`checkout-item-subtotal-${item.product.id}`}
-                        className="text-[15px] text-ink tabular-nums shrink-0"
+                  {items.map((item) => {
+                    const color = getProductColor(item.product, item.colorId);
+                    const sizeName = getProductSize(item.product, item.sizeId)?.name ?? item.sizeId.toUpperCase();
+                    const lineId = getLineId(item.product.id, color.id, item.sizeId);
+                    return (
+                      <div
+                        key={lineId}
+                        data-testid={`checkout-item-${lineId}`}
+                        className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
                       >
-                        {formatCurrency(calculateItemSubtotal(item.product.priceCents, item.quantity))}
-                      </span>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-4 min-w-0">
+                          <img
+                            src={color.image}
+                            alt={`${item.product.name} in ${color.name}`}
+                            className="w-14 h-14 rounded-xl object-cover bg-fill shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-[15px] text-ink truncate">{item.product.name}</p>
+                            <p className="text-[13px] text-ink-2">
+                              Color:{' '}
+                              <span data-testid={`checkout-item-color-${lineId}`}>{color.name}</span>
+                            </p>
+                            <p className="text-[13px] text-ink-2">
+                              Size:{' '}
+                              <span data-testid={`checkout-item-size-${lineId}`}>{sizeName}</span>
+                            </p>
+                            <p className="text-[13px] text-ink-2">
+                              Qty:{' '}
+                              <span data-testid={`checkout-item-quantity-${lineId}`} className="tabular-nums">
+                                {item.quantity}
+                              </span>{' '}
+                              × {item.product.formattedPrice}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          data-testid={`checkout-item-subtotal-${lineId}`}
+                          className="text-[15px] text-ink tabular-nums shrink-0"
+                        >
+                          {formatCurrency(calculateItemSubtotal(item.product.priceCents, item.quantity))}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <p data-testid="checkout-empty-items-message" className="text-[15px] text-ink-3">

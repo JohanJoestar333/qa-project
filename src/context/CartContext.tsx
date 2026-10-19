@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { SAVED_DELIVERY_ADDRESS, SAVED_PAYMENT_METHOD } from '../data/mockUser';
-import { INITIAL_PRODUCTS, getProductById } from '../data/products';
+import { INITIAL_PRODUCTS, getProductById, getProductColor, getProductSize } from '../data/products';
 import { CartItem, CartSummary, Order, OrderItem, Product } from '../types';
 import { calculateCartSummary, calculateItemSubtotal } from '../utils/currency';
 import { loadJson, removeKey, saveJson } from '../utils/storage';
@@ -14,10 +14,11 @@ interface CartContextType {
   products: Product[];
   items: CartItem[];
   summary: CartSummary;
-  addItem: (product: Product, quantity?: number) => ActionResult;
-  increaseQuantity: (productId: string) => void;
-  decreaseQuantity: (productId: string) => void;
-  removeItem: (productId: string) => void;
+  getQuantityInCart: (productId: string) => number;
+  addItem: (product: Product, colorId: string, sizeId: string, quantity?: number) => ActionResult;
+  increaseQuantity: (productId: string, colorId: string, sizeId: string) => void;
+  decreaseQuantity: (productId: string, colorId: string, sizeId: string) => void;
+  removeItem: (productId: string, colorId: string, sizeId: string) => void;
   clearCart: () => void;
   createOrder: () => { success: boolean; order?: Order; error?: string };
   lastOrder: Order | null;
@@ -25,15 +26,18 @@ interface CartContextType {
   resetStock: () => void;
 }
 
-const CART_STORAGE_KEY = 'qacart_items';
+const CART_STORAGE_KEY = 'qacart_cart_lines_v2';
 const LAST_ORDER_STORAGE_KEY = 'qacart_last_order';
 const STOCK_STORAGE_KEY = 'qacart_product_stock';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Image paths can change between releases, so always use the current one from the catalog.
-const currentImage = (productId: string, savedImage: string): string =>
-  getProductById(productId)?.image ?? savedImage;
+interface StoredCartLine {
+  productId: string;
+  colorId: string;
+  sizeId: string;
+  quantity: number;
+}
 
 const loadProducts = (): Product[] => {
   const savedStock = loadJson<Record<string, number>>(STOCK_STORAGE_KEY, {});
@@ -43,18 +47,29 @@ const loadProducts = (): Product[] => {
   }));
 };
 
-const loadItems = (): CartItem[] =>
-  loadJson<CartItem[]>(CART_STORAGE_KEY, []).map((item) => ({
-    ...item,
-    product: { ...item.product, image: currentImage(item.product.id, item.product.image) },
-  }));
+// The cart is saved as plain lines and rebuilt from the catalog, so product data is never stale.
+const loadItems = (): CartItem[] => {
+  const lines = loadJson<StoredCartLine[]>(CART_STORAGE_KEY, []);
+  return lines.flatMap((line) => {
+    const product = getProductById(line.productId);
+    const size = product && getProductSize(product, line.sizeId);
+    if (!product || !size) return [];
+    return [{ product, colorId: getProductColor(product, line.colorId).id, sizeId: size.id, quantity: line.quantity }];
+  });
+};
 
 const loadLastOrder = (): Order | null => {
   const saved = loadJson<Order | null>(LAST_ORDER_STORAGE_KEY, null);
-  if (!saved) return null;
+  // Orders saved before sizes existed have no size, so they are dropped
+  if (!saved || saved.items.some((item) => !item.sizeId)) return null;
   return {
     ...saved,
-    items: saved.items.map((item) => ({ ...item, image: currentImage(item.id, item.image) })),
+    items: saved.items.map((item) => {
+      const product = getProductById(item.id);
+      if (!product) return item;
+      const color = getProductColor(product, item.colorId);
+      return { ...item, colorId: color.id, colorName: color.name, image: color.image };
+    }),
   };
 };
 
@@ -72,7 +87,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [products]);
 
   useEffect(() => {
-    saveJson(CART_STORAGE_KEY, items);
+    const lines: StoredCartLine[] = items.map((item) => ({
+      productId: item.product.id,
+      colorId: item.colorId,
+      sizeId: item.sizeId,
+      quantity: item.quantity,
+    }));
+    saveJson(CART_STORAGE_KEY, lines);
   }, [items]);
 
   useEffect(() => {
@@ -89,55 +110,66 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return products.find((product) => product.id === productId)?.stock ?? 0;
   };
 
-  const addItem = (product: Product, quantity: number = 1): ActionResult => {
+  // Stock is shared by all colors of a product, so quantities are counted per product.
+  const getQuantityInCart = (productId: string): number => {
+    return items
+      .filter((item) => item.product.id === productId)
+      .reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const isSameLine = (item: CartItem, productId: string, colorId: string, sizeId: string) =>
+    item.product.id === productId && item.colorId === colorId && item.sizeId === sizeId;
+
+  const addItem = (product: Product, colorId: string, sizeId: string, quantity: number = 1): ActionResult => {
     const stock = getStock(product.id);
 
     if (stock <= 0) {
       return { success: false, message: 'This item is currently out of stock.' };
     }
 
-    const existing = items.find((item) => item.product.id === product.id);
+    const inCart = getQuantityInCart(product.id);
+
+    if (inCart + quantity > stock) {
+      return {
+        success: false,
+        message:
+          inCart > 0
+            ? `Cannot add more. Maximum available stock (${stock}) reached.`
+            : `Quantity exceeds available stock (${stock}).`,
+      };
+    }
+
+    const existing = items.find((item) => isSameLine(item, product.id, colorId, sizeId));
 
     if (existing) {
-      const newQuantity = existing.quantity + quantity;
-      if (newQuantity > stock) {
-        return { success: false, message: `Cannot add more. Maximum available stock (${stock}) reached.` };
-      }
-      setItems(items.map((item) => (item === existing ? { ...item, quantity: newQuantity } : item)));
-      return { success: true };
+      setItems(items.map((item) => (item === existing ? { ...item, quantity: item.quantity + quantity } : item)));
+    } else {
+      setItems([...items, { product, colorId, sizeId, quantity }]);
     }
-
-    if (quantity > stock) {
-      return { success: false, message: `Quantity exceeds available stock (${stock}).` };
-    }
-
-    setItems([...items, { product: { ...product, stock }, quantity }]);
     return { success: true };
   };
 
-  const increaseQuantity = (productId: string) => {
-    const stock = getStock(productId);
+  const increaseQuantity = (productId: string, colorId: string, sizeId: string) => {
+    if (getQuantityInCart(productId) >= getStock(productId)) return;
     setItems((current) =>
       current.map((item) =>
-        item.product.id === productId && item.quantity < stock
-          ? { ...item, quantity: item.quantity + 1 }
-          : item,
+        isSameLine(item, productId, colorId, sizeId) ? { ...item, quantity: item.quantity + 1 } : item,
       ),
     );
   };
 
-  // Decreasing from 1 removes the item
-  const decreaseQuantity = (productId: string) => {
+  // Decreasing from 1 removes the line
+  const decreaseQuantity = (productId: string, colorId: string, sizeId: string) => {
     setItems((current) =>
       current.flatMap((item) => {
-        if (item.product.id !== productId) return [item];
+        if (!isSameLine(item, productId, colorId, sizeId)) return [item];
         return item.quantity > 1 ? [{ ...item, quantity: item.quantity - 1 }] : [];
       }),
     );
   };
 
-  const removeItem = (productId: string) => {
-    setItems((current) => current.filter((item) => item.product.id !== productId));
+  const removeItem = (productId: string, colorId: string, sizeId: string) => {
+    setItems((current) => current.filter((item) => !isSameLine(item, productId, colorId, sizeId)));
   };
 
   const clearCart = () => setItems([]);
@@ -154,28 +186,36 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Your cart is empty. Please add items before checking out.' };
     }
 
-    for (const item of items) {
-      const stock = getStock(item.product.id);
-      if (item.quantity > stock) {
-        return { success: false, error: `Insufficient stock for ${item.product.name}. Only ${stock} available.` };
+    for (const product of products) {
+      const quantity = getQuantityInCart(product.id);
+      if (quantity > product.stock) {
+        return { success: false, error: `Insufficient stock for ${product.name}. Only ${product.stock} available.` };
       }
     }
 
     setProducts((current) =>
       current.map((product) => {
-        const purchased = items.find((item) => item.product.id === product.id);
-        return purchased ? { ...product, stock: Math.max(0, product.stock - purchased.quantity) } : product;
+        const quantity = getQuantityInCart(product.id);
+        return quantity > 0 ? { ...product, stock: Math.max(0, product.stock - quantity) } : product;
       }),
     );
 
-    const orderItems: OrderItem[] = items.map((item) => ({
-      id: item.product.id,
-      name: item.product.name,
-      quantity: item.quantity,
-      unitPriceCents: item.product.priceCents,
-      subtotalCents: calculateItemSubtotal(item.product.priceCents, item.quantity),
-      image: item.product.image,
-    }));
+    const orderItems: OrderItem[] = items.map((item) => {
+      const color = getProductColor(item.product, item.colorId);
+      const size = getProductSize(item.product, item.sizeId);
+      return {
+        id: item.product.id,
+        colorId: color.id,
+        colorName: color.name,
+        sizeId: item.sizeId,
+        sizeName: size?.name ?? item.sizeId.toUpperCase(),
+        name: item.product.name,
+        quantity: item.quantity,
+        unitPriceCents: item.product.priceCents,
+        subtotalCents: calculateItemSubtotal(item.product.priceCents, item.quantity),
+        image: color.image,
+      };
+    });
 
     const order: Order = {
       orderNumber: `QA-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -200,6 +240,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         products,
         items,
         summary,
+        getQuantityInCart,
         addItem,
         increaseQuantity,
         decreaseQuantity,

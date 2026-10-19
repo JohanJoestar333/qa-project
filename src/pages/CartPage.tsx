@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { CartItemRow } from '../components/CartItemRow';
 import { OrderSummary } from '../components/OrderSummary';
+import { getLineId } from '../data/products';
 
 export const CartPage: React.FC = () => {
   const { items, summary, clearCart } = useCart();
@@ -49,7 +50,7 @@ export const CartPage: React.FC = () => {
           <div className="lg:col-span-7 bg-surface rounded-[22px] p-6">
             <div data-testid="cart-items-list" className="divide-y divide-line">
               {items.map((item) => (
-                <CartItemRow key={item.product.id} item={item} />
+                <CartItemRow key={getLineId(item.product.id, item.colorId, item.sizeId)} item={item} />
               ))}
             </div>
 
