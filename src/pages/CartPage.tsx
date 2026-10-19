@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { CartItemRow } from '../components/CartItemRow';
 import { OrderSummary } from '../components/OrderSummary';
+import { ConfirmDialog } from '../components/ConfirmDialog';
+import { useToast } from '../context/ToastContext';
 import { getLineId } from '../data/products';
 
 export const CartPage: React.FC = () => {
   const { items, summary, clearCart } = useCart();
+  const { showToast } = useToast();
   const navigate = useNavigate();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const isEmpty = items.length === 0;
+
+  const handleConfirmEmpty = () => {
+    clearCart();
+    setIsConfirmOpen(false);
+    showToast({ title: 'Cart emptied' });
+  };
 
   return (
     <div data-testid="cart-page" className="max-w-5xl mx-auto px-5 pt-14 pb-20">
@@ -26,7 +36,7 @@ export const CartPage: React.FC = () => {
         {!isEmpty && (
           <button
             type="button"
-            onClick={clearCart}
+            onClick={() => setIsConfirmOpen(true)}
             data-testid="cart-clear-button"
             className="link text-[15px] shrink-0"
           >
@@ -82,6 +92,16 @@ export const CartPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        title="Empty your cart?"
+        message={`This will remove ${summary.itemCount} ${summary.itemCount === 1 ? 'item' : 'items'} from your cart.`}
+        confirmLabel="Remove All"
+        onConfirm={handleConfirmEmpty}
+        onCancel={() => setIsConfirmOpen(false)}
+        testIdPrefix="empty-cart-dialog"
+      />
     </div>
   );
 };
