@@ -1,0 +1,120 @@
+# Adds a "Vercel preview" web link to every Jira story a preview deployment belongs to.
+#
+# Vercel reports each deployment to GitHub. When a Preview deployment succeeds, this
+# workflow finds the Jira keys (for example PIXEL-11) in the branch name and in the
+# titles of open pull requests for that commit, then adds or updates a web link on
+# each story. There is one link per branch: a new push updates it instead of adding
+# a second one.
+#
+# Requires the repository secrets JIRA_EMAIL and JIRA_API_TOKEN.
+
+name: Jira preview link
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+env:
+  JIRA_BASE_URL: https://johannentrepreneur.atlassian.net
+  JIRA_PROJECT_KEY: PIXEL
+
+jobs:
+  link-preview:
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      startsWith(github.event.deployment.environment, 'Preview')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add the preview link to the Jira stories
+        uses: actions/github-script@v7
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        with:
+          script: |
+            const { JIRA_BASE_URL, JIRA_PROJECT_KEY, JIRA_EMAIL, JIRA_API_TOKEN } = process.env;
+            if (!JIRA_EMAIL || !JIRA_API_TOKEN) {
+              core.setFailed('The JIRA_EMAIL and JIRA_API_TOKEN repository secrets must both be set.');
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const { deployment, deployment_status: status } = context.payload;
+            const sha = deployment.sha;
+            const previewUrl = status.environment_url || status.target_url;
+            if (!previewUrl) {
+              core.info('The deployment has no URL, so there is nothing to link.');
+              return;
+            }
+
+            // Vercel records the commit, not the branch, so look up both from the commit.
+            const { data: branchData } = await github.request(
+              'GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head',
+              { owner, repo, commit_sha: sha },
+            );
+            const { data: pullData } = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+              owner,
+              repo,
+              commit_sha: sha,
+            });
+            const openPulls = pullData.filter((pull) => pull.state === 'open');
+
+            const branch = openPulls[0]?.head.ref ?? branchData[0]?.name;
+            if (!branch) {
+              core.info(`No branch or open pull request points at ${sha}, so there is nothing to link.`);
+              return;
+            }
+
+            const searchText = [
+              ...branchData.map((b) => b.name),
+              ...openPulls.map((pull) => `${pull.head.ref} ${pull.title}`),
+            ].join(' ');
+            const keyPattern = new RegExp(`\\b${JIRA_PROJECT_KEY}-\\d+\\b`, 'gi');
+            const keys = [...new Set((searchText.match(keyPattern) ?? []).map((key) => key.toUpperCase()))];
+
+            if (keys.length === 0) {
+              core.info(`No ${JIRA_PROJECT_KEY} keys found for ${branch}, so there is nothing to link.`);
+              return;
+            }
+            core.info(`Linking ${previewUrl} to ${keys.join(', ')}`);
+
+            const auth = Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64');
+            const link = {
+              // Same globalId on every run, so Jira updates the link instead of adding another.
+              globalId: `vercel-preview:${repo}:${branch}`,
+              application: { type: 'com.vercel', name: 'Vercel' },
+              relationship: 'test environment',
+              object: {
+                url: previewUrl,
+                title: `Vercel preview: ${branch}`,
+                summary: `Latest preview deployment of ${branch} (commit ${sha.slice(0, 7)})`,
+                icon: { url16x16: 'https://vercel.com/favicon.ico', title: 'Vercel' },
+              },
+            };
+
+            let failedAuth = false;
+            for (const key of keys) {
+              const response = await fetch(`${JIRA_BASE_URL}/rest/api/3/issue/${key}/remotelink`, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Basic ${auth}`,
+                  Accept: 'application/json',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(link),
+              });
+
+              if (response.ok) {
+                core.info(`${key}: link saved`);
+              } else if (response.status === 401 || response.status === 403) {
+                failedAuth = true;
+                core.error(`${key}: Jira refused the request (${response.status}). Check JIRA_EMAIL and JIRA_API_TOKEN.`);
+              } else {
+                core.warning(`${key}: Jira returned ${response.status}: ${await response.text()}`);
+              }
+            }
+
+            if (failedAuth) core.setFailed('Jira rejected the credentials.');
