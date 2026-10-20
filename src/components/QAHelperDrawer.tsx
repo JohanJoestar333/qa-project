@@ -17,6 +17,7 @@ const CHECKS = [
   'Wrong password shows login-error-message',
   `Tax is ${TAX_RATE_PERCENT}%, calculated in integer cents`,
   'Checkout with an empty cart is blocked',
+  'Emptying the cart asks for confirmation first',
   'After an order the cart is emptied and an order number is generated',
 ];
 

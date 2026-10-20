@@ -26,7 +26,7 @@ This repository contains the application, the test ID reference and a few exampl
 | Product page | Opens from the catalog, color selection (swatches, thumbnails, size buttons, arrow keys and `?color=` and `?size=`), quantity selector, expandable sections, sticky buy bar after scrolling, unknown product ID |
 | Sizes | S, M and L are chosen on the product page only, there is no default, and adding without a size shows an error |
 | Colors, sizes and stock | The same product in another color or size is a separate cart line, but all of them draw from one shared stock |
-| Cart | Add, increase, decrease, remove, empty cart, quantity capped at stock, live header count |
+| Cart | Add, increase, decrease, remove, empty cart, quantity capped at stock, live header count, emptying the cart asks for confirmation first |
 | Pricing | Integer-cent math, free shipping, 10% tax, totals on cart, checkout and confirmation |
 | Checkout | Saved address and payment, empty cart blocked, order placed once |
 | Order result | Order number format, itemized receipt, stock reduced, cart emptied |
@@ -139,7 +139,10 @@ Names follow `<area>-<element>`. Elements that exist once per product end with t
 
 ### Cart (`/cart`)
 - `cart-page`, `cart-title`, `cart-subtitle`, `cart-items-list`
-- `cart-clear-button`: Empties the cart
+- `cart-clear-button`: Opens the "Empty your cart?" confirmation
+- `empty-cart-dialog`: The confirmation dialog, with `empty-cart-dialog-title` and `empty-cart-dialog-message` (shows how many items will be removed)
+- `empty-cart-dialog-confirm-button`: "Remove All" empties the cart and shows a "Cart emptied" toast
+- `empty-cart-dialog-cancel-button`: Closes the dialog and keeps the cart. Escape and a click on `empty-cart-dialog-backdrop` do the same.
 - `cart-subtotal`
 - `cart-empty-state`, `cart-empty-message`
 - `continue-shopping-button`: Returns to `/products`
@@ -199,7 +202,7 @@ The cart, checkout and order flows are left for you to explore. Think about stoc
 src/
   assets/       images/ (one photo per product and color, e.g. hoodie-navy.jpg)
   components/   Navbar, ProductCard, CartItemRow, OrderSummary, QAHelperDrawer,
-                ProtectedRoute, Reveal, ScrollToTop, ColorSwatches, SizeSelector, Accordion
+                ProtectedRoute, Reveal, ScrollToTop, ColorSwatches, SizeSelector, Accordion, ConfirmDialog
   context/      AuthContext, CartContext, ThemeContext, ToastContext
   hooks/        useRadioGroupKeys (arrow-key navigation for swatches and sizes)
   data/         mockUser.ts (test user, address, card), products.ts
