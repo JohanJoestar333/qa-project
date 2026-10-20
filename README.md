@@ -46,7 +46,9 @@ GitHub labels mirror it on the pull requests: `developing`, `ready for code revi
 
 ## Jira
 
-![Sprint board in Jira](docs/screenshots/jira-board.png)
+![Sprint 2 board in Jira, with stories in Test in Staging and test priority labels](docs/screenshots/jira-board.png)
+
+*The Sprint 2 board. Each card shows its area label, its test priority and the epic it belongs to.*
 
 The work is split into five epics: Login & Session, Product Catalog, Shopping Cart, Checkout and Order Confirmation.
 
@@ -57,7 +59,9 @@ Each story is split into `[DEV]`, `[TEST]` and `[DOCS]` subtasks. A story isn't 
 
 Every story has a **test priority label** from `test-priority-1-critical` to `test-priority-4-low`, so whoever is testing knows where to start. Sign-in, adding to the cart, prices and placing an order are always critical.
 
-![A story with acceptance criteria and the linked pull request](docs/screenshots/jira-story.png)
+![Sprint 2 backlog with PIXEL-11 open, showing the user story and acceptance criteria](docs/screenshots/jira-story.png)
+
+*The Sprint 2 backlog with PIXEL-11 open: the user story and its acceptance criteria, written as Given / When / Then.*
 
 ## Confluence
 
@@ -67,7 +71,9 @@ Confluence holds how the app is supposed to behave and how it's tested:
 - **Feature pages** for Login, Catalog, Cart, Checkout and Order Confirmation. Each one has numbered business rules (like "CA2: stock is shared by every color and size"), the exact messages, planned changes and the `data-testid` for every element.
 - **Test Documentation.** A guide to how test cases are written, one page of test cases per module and the regression scenario.
 
-![Shopping Cart test cases in Confluence](docs/screenshots/confluence-test-cases.png)
+![Login & Session test cases in Confluence, with the page tree on the left](docs/screenshots/confluence-test-cases.png)
+
+*Login & Session test cases. The page tree on the left shows how the space is organized.*
 
 ## Test cases
 
