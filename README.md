@@ -236,6 +236,7 @@ One 22-step end-to-end scenario walks through everything a shopper must be able 
 | #1 | PIXEL-11, 12, 13, 20, 31: product page with size and color selection | Merged to `staging` |
 | #2 | PIXEL-63: Vercel preview links on Jira stories | Merged to `staging` |
 | #3 | PIXEL-64: confirmation before emptying the cart | In review |
+| #4 | PIXEL-63: release of the Jira preview link workflow, branched from `main` with only that change | Merged to `main` |
 
 ## Environments on Vercel
 
