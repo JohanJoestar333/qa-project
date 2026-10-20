@@ -39,10 +39,22 @@ async function revealAll(page) {
   await page.waitForTimeout(400);
 }
 
-async function shot(page, name, { fullPage = false } = {}) {
+// Hides the floating QA panel bar so it doesn't cover the page in screenshots.
+async function setQaPanelVisible(page, visible) {
+  await page.evaluate((show) => {
+    let el = document.querySelector('[data-testid="qa-helper-toggle"]');
+    while (el && getComputedStyle(el).position !== 'fixed') el = el.parentElement;
+    if (el) el.style.visibility = show ? '' : 'hidden';
+  }, visible);
+}
+
+async function shot(page, name, { fullPage = false, showQaPanel = false } = {}) {
   if (fullPage) await revealAll(page);
+  else await page.evaluate(() => window.scrollTo(0, 0));
+  await setQaPanelVisible(page, showQaPanel);
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${OUT_DIR}/${name}.png`, fullPage });
+  await setQaPanelVisible(page, true);
   console.log(`saved ${name}.png`);
 }
 
@@ -107,7 +119,7 @@ await shot(page, 'order-confirmation', { fullPage: true });
 await page.goto(`${BASE_URL}/products`);
 await byId('qa-helper-toggle').click();
 await byId('qa-helper-panel').waitFor();
-await shot(page, 'qa-panel');
+await shot(page, 'qa-panel', { showQaPanel: true });
 await byId('qa-helper-toggle').click();
 
 // Dark mode, then back to light so the mobile shots start in light mode
