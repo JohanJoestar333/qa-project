@@ -47,7 +47,7 @@ A shopper signs in, browses three CloudSoft products, picks a color and a size, 
 | **Login & session** | Email and password sign-in, Show/Hide password, profile menu, Sign Out | Required fields, email format, unknown email, wrong password, case-insensitive email, protected pages, return to the page you asked for |
 | **Catalog** | Product cards with price, tag, stock and color swatches | Default color, swatch changes the photo, in-cart count, low-stock and sold-out states |
 | **Product page** | Photos per color, color and size selection, quantity stepper, Add to Cart, sticky buy bar, info sections | Size is required, color and size kept in the URL, quantity limited by stock, Max Limit and Out of Stock |
-| **Cart** | One line per product, color and size; change quantity, remove, Empty Cart | Shared stock across variants, integer-cent price math, 10% tax, free shipping, survives reload and sign-out |
+| **Cart** | One line per product, color and size; change quantity, remove, Empty Cart with a confirmation dialog | Shared stock across variants, integer-cent price math, 10% tax, free shipping, survives reload and sign-out, Cancel and Escape keep the cart |
 | **Checkout** | Saved address and card, order summary, Place Order | Empty cart blocked, order placed once, totals match the cart |
 | **Order confirmation** | Order number, date, status, items and totals | `QA-` + 6 digits, stock reduced, cart emptied, reload doesn't order again |
 | **QA panel** | Test credentials with copy buttons, live stock, **Reset Demo & Stock** | Reset keeps the session and theme |
@@ -62,12 +62,10 @@ A shopper signs in, browses three CloudSoft products, picks a color and a size, 
 | ![Product page in Black, size L, with the Added to cart notification](docs/screenshots/product-page.png) | ![Cart with three lines and the order summary](docs/screenshots/cart.png) |
 | **Checkout** | **Order confirmation** |
 | ![Checkout with address, card and Place Order button](docs/screenshots/checkout.png) | ![Order confirmation with a QA order number](docs/screenshots/order-confirmation.png) |
+| **Empty Cart confirmation** | **Phone** |
+| ![Empty your cart? dialog with Cancel and Remove All](docs/screenshots/empty-cart-dialog.png) <img src="docs/screenshots/mobile-product.png" alt="Product page on a phone" width="220"> |
 | **QA panel** | **Dark mode** |
 | ![QA panel with test user, stock and reset button](docs/screenshots/qa-panel.png) | ![Catalog in dark mode](docs/screenshots/catalog-dark.png) |
-
-<p align="center">
-  <img src="docs/screenshots/mobile-product.png" alt="Product page on a phone" width="260">
-</p>
 
 The screenshots are taken by Playwright from the `staging` code (see [Automation](#automation)), so they always show the real build.
 
@@ -235,7 +233,7 @@ One 22-step end-to-end scenario walks through everything a shopper must be able 
 |---|---|---|
 | #1 | PIXEL-11, 12, 13, 20, 31: product page with size and color selection | Merged to `staging` |
 | #2 | PIXEL-63: Vercel preview links on Jira stories | Merged to `staging` |
-| #3 | PIXEL-64: confirmation before emptying the cart | In review |
+| #3 | PIXEL-64: confirmation before emptying the cart | Merged to `staging` |
 | #4 | PIXEL-63: release of the Jira preview link workflow, branched from `main` with only that change | Merged to `main` |
 
 ## Environments on Vercel
@@ -269,7 +267,7 @@ Vercel comments the preview link on every pull request. `vercel.json` sends all 
 
 | Story | Change | Status |
 |---|---|---|
-| PIXEL-64 | Confirm before emptying the cart | In review (PR #3) |
+| PIXEL-64 | Confirm before emptying the cart | On staging |
 | PIXEL-65 | Sort the catalog by price | In development |
 | PIXEL-14 | Track stock per color and size | Backlog |
 | PIXEL-23 to 26 | Add and choose delivery addresses and payment cards at checkout | Backlog |
@@ -391,8 +389,8 @@ Names follow `<area>-<element>`. Elements that exist once per product end with t
 <summary><strong>Cart (<code>/cart</code>)</strong></summary>
 
 - `cart-page`, `cart-title`, `cart-subtitle`, `cart-items-list`, `cart-subtotal`
-- `cart-clear-button`: Empty Cart
-- `empty-cart-dialog`, `empty-cart-dialog-title`, `empty-cart-dialog-message`, `empty-cart-dialog-cancel-button`, `empty-cart-dialog-confirm-button`, `empty-cart-dialog-backdrop`: Confirmation dialog (PIXEL-64, in review)
+- `cart-clear-button`: Empty Cart, opens the confirmation dialog
+- `empty-cart-dialog`, `empty-cart-dialog-title`, `empty-cart-dialog-message`, `empty-cart-dialog-cancel-button`, `empty-cart-dialog-confirm-button`, `empty-cart-dialog-backdrop`: "Empty your cart?" dialog. Remove All empties the cart and shows "Cart emptied"; Cancel, Escape or a click outside keeps it
 - `cart-empty-state`, `cart-empty-message`, `continue-shopping-button`
 - `proceed-to-checkout-button`
 - Per line: `cart-item-<line>`, `cart-item-image-<line>`, `cart-item-name-<line>`, `cart-item-color-<line>`, `cart-item-size-<line>`, `cart-item-sku-<line>`, `cart-item-unit-price-<line>`, `cart-item-stock-<line>`, `cart-item-quantity-<line>`, `cart-item-subtotal-<line>`, `increase-quantity-<line>`, `decrease-quantity-<line>`, `remove-item-<line>`
@@ -444,7 +442,8 @@ scripts/            take-screenshots.mjs
 src/
   assets/           images/ (one photo per product and color)
   components/       Navbar, ProductCard, CartItemRow, OrderSummary, QAHelperDrawer,
-                    ProtectedRoute, Reveal, ScrollToTop, ColorSwatches, SizeSelector, Accordion
+                    ProtectedRoute, Reveal, ScrollToTop, ColorSwatches, SizeSelector, Accordion,
+                    ConfirmDialog
   context/          AuthContext, CartContext, ThemeContext, ToastContext
   hooks/            useRadioGroupKeys (arrow keys for swatches and sizes)
   data/             mockUser.ts (test user, address, card), products.ts

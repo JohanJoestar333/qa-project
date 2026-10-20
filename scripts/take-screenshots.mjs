@@ -106,6 +106,12 @@ await page.goto(`${BASE_URL}/cart`);
 await byId('cart-items-list').waitFor();
 await shot(page, 'cart', { fullPage: true });
 
+// Empty Cart asks for confirmation; Cancel keeps the cart
+await byId('cart-clear-button').click();
+await byId('empty-cart-dialog').waitFor();
+await shot(page, 'empty-cart-dialog');
+await byId('empty-cart-dialog-cancel-button').click();
+
 await byId('proceed-to-checkout-button').click();
 await page.waitForURL('**/checkout');
 await shot(page, 'checkout', { fullPage: true });
