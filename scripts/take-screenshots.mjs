@@ -73,83 +73,27 @@ const desktop = await browser.newContext({
 const page = await desktop.newPage();
 const byId = (testId) => page.getByTestId(testId);
 
-// Login with a wrong password, then the real one
+// Sign in
 await page.goto(`${BASE_URL}/login`);
 await byId('login-email-input').fill(USER.email);
-await byId('login-password-input').fill('Wrong123!');
-await byId('login-submit-button').click();
-await byId('login-error-message').waitFor();
-await shot(page, 'login-error');
-
 await byId('login-password-input').fill(USER.password);
 await byId('login-submit-button').click();
 await page.waitForURL('**/products');
-await shot(page, 'catalog', { fullPage: true });
 
-// Product page: Add to Cart without a size, then with one
+// Product page with a color and size chosen, right after Add to Cart
 await page.goto(`${BASE_URL}/products/PC-001?color=black`);
-await byId('product-page-add-to-cart').click();
-await byId('product-size-error').waitFor();
-await shot(page, 'product-size-error');
-
 await byId('product-size-l').click();
 await byId('product-quantity-increase').click();
 await byId('product-page-add-to-cart').click();
 await byId('toast').waitFor();
 await shot(page, 'product-page');
 
-// Fill the cart
+// Cart with three lines in different colors and sizes
 await addToCart(page, '/products/PC-001?color=navy&size=m');
 await addToCart(page, '/products/PC-003?color=olive&size=s');
-
 await page.goto(`${BASE_URL}/cart`);
 await byId('cart-items-list').waitFor();
 await shot(page, 'cart', { fullPage: true });
 
-// Empty Cart asks for confirmation; Cancel keeps the cart
-await byId('cart-clear-button').click();
-await byId('empty-cart-dialog').waitFor();
-await shot(page, 'empty-cart-dialog');
-await byId('empty-cart-dialog-cancel-button').click();
-
-await byId('proceed-to-checkout-button').click();
-await page.waitForURL('**/checkout');
-await shot(page, 'checkout', { fullPage: true });
-
-await byId('place-order-button').click();
-await page.waitForURL('**/order-confirmation');
-await byId('order-confirmation-number').waitFor();
-await shot(page, 'order-confirmation', { fullPage: true });
-
-// QA panel
-await page.goto(`${BASE_URL}/products`);
-await byId('qa-helper-toggle').click();
-await byId('qa-helper-panel').waitFor();
-await shot(page, 'qa-panel', { showQaPanel: true });
-await byId('qa-helper-toggle').click();
-
-// Dark mode, then back to light so the mobile shots start in light mode
-await byId('theme-toggle').click();
-await shot(page, 'catalog-dark');
-await byId('theme-toggle').click();
-
-const signedIn = await desktop.storageState();
 await desktop.close();
-
-// Phone
-const phone = await browser.newContext({
-  viewport: { width: 390, height: 844 },
-  deviceScaleFactor: 2,
-  isMobile: true,
-  hasTouch: true,
-  colorScheme: 'light',
-  reducedMotion: 'reduce',
-  storageState: signedIn,
-});
-const mobile = await phone.newPage();
-await mobile.goto(`${BASE_URL}/products/PC-002?color=grey&size=m`);
-await mobile.getByTestId('product-page-name').waitFor();
-await shot(mobile, 'mobile-product');
-await phone.close();
-
 await browser.close();
