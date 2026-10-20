@@ -7,6 +7,38 @@ PixelCart is a small clothing store I built so I could practice and show the wor
 - Jira project: `PIXEL` (Scrum board, two-week sprints)
 - Confluence space: `PIXEL` (feature specs, test data and test cases)
 
+## At a glance
+
+- **2 sprints** in Jira, with epics, user stories, acceptance criteria and test priority labels
+- **128 test cases** in Confluence, plus a test strategy, a bug template and release notes
+- **Release 1.1** shipped after a full regression on staging: **123 passed, 5 failed**
+- **4 bugs** logged with steps to reproduce and a video, each linked to its story
+- Playwright automation is next and still in progress
+
+### My favorite bug
+
+If you open checkout in two browser tabs, both tabs can buy the last 50 hoodies. Each tab keeps its own copy of the stock and never sees the order placed in the other one, so the store sells 100 hoodies it doesn't have. I found it with TC-CHK-010, logged it as PIXEL-70 with a Loom video, and it shipped as a known issue with a workaround.
+
+![Bug PIXEL-70 in Jira: description, Given / When / Then steps and the Loom video](docs/screenshots/jira-bug.png)
+
+### Release 1.1 results
+
+| Bug | Priority | Failed tests |
+|---|---|---|
+| **PIXEL-70** Two browser tabs can sell more than the available stock | High | TC-CHK-010 |
+| **PIXEL-71** Signing in always goes to Products instead of the page you asked for | Medium | TC-LOGIN-005, TC-REG-001 step 5 |
+| **PIXEL-69** The Black color swatch is almost invisible in dark mode | Medium | TC-GEN-006 |
+| **PIXEL-72** Prices of $1,000 or more have no thousands separator ($1999.50) | Low | TC-CART-014 |
+
+None of them blocks buying or charges the wrong amount, and each has a workaround, so the release went out with them listed as known issues.
+
+<p>
+  <img src="docs/screenshots/test-execution-report.png" alt="Test Execution Report for Sprint 2 in Confluence: 128 run, 123 passed, 5 failed" width="49%">
+  <img src="docs/screenshots/release-notes.png" alt="Release Notes for Release 1.1 in Confluence, marked as released" width="49%">
+</p>
+
+*Left: the test execution report for Sprint 2. Right: the release notes for Release 1.1.*
+
 ![Product page with a color and size chosen and the "Added to cart" message](docs/screenshots/product-page.png)
 
 ## The app
@@ -34,7 +66,7 @@ I treat every change the way it would be handled at a company. Here's what happe
 2. **Test cases before the code.** I updated TC-CART-010 and added five new cases (TC-CART-023 to 027) in Confluence: Cancel, Escape, clicking outside, the "1 item / 3 items" message and keyboard use.
 3. **Branch and pull request.** The work was done on `feature/PIXEL-64-confirm-empty-cart`, branched from `staging`. The PR title starts with the Jira key, so the branch, commits and PR show up on the story in Jira.
 4. **Review and preview.** Vercel builds a preview for the PR and posts the link. A workflow adds the same link to the Jira story, so I can open the right build straight from the ticket. The story moves to Code Review, then Ready To Test.
-5. **Testing.** I run the test cases on the preview. Anything that fails becomes a bug in Jira with the test case ID in the title, steps, expected and actual results, and a screenshot.
+5. **Testing.** I run the test cases on the preview. Anything that fails becomes a bug in Jira with a description, Given / When / Then steps to reproduce and a Loom video, linked to the story.
 6. **Staging.** After it passes, the PR is merged into `staging` and the story moves to Test in Staging. This is where the full regression runs, because other changes are in there too.
 7. **Release.** When staging is clean, `staging` is merged into `main`, which is production, and the story is Done.
 
@@ -115,19 +147,6 @@ There's also one end-to-end regression test, **TC-REG-001**. In 22 steps it goes
 - **README screenshots.** A GitHub Action builds the app and takes the screenshots above with Playwright, so they always match the real build.
 
 Next up are the Playwright tests themselves, starting with TC-REG-001, running on GitHub Actions against every preview and required to pass before anything is merged.
-
-## Release 1.1: test results and bugs
-
-Before releasing the product page, colors, sizes and the Empty Cart confirmation, I ran all 128 test cases on staging. **123 passed and 5 failed.** Each failure was logged as a bug with the same template (description, Given / When / Then steps and a video):
-
-| Bug | Priority | Failed tests |
-|---|---|---|
-| **PIXEL-70** Two browser tabs can sell more than the available stock. Each tab keeps its own copy of the stock, so both can buy the last 50 hoodies. | High | TC-CHK-010 |
-| **PIXEL-71** Signing in always goes to Products instead of the page you asked for. | Medium | TC-LOGIN-005, TC-REG-001 step 5 |
-| **PIXEL-69** The Black color swatch is almost invisible in dark mode. | Medium | TC-GEN-006 |
-| **PIXEL-72** Prices of $1,000 or more have no thousands separator ($1999.50). | Low | TC-CART-014 |
-
-None of them blocks buying or charges the wrong amount, and each has a workaround, so the release went out with them listed as known issues. PIXEL-70 is planned for Sprint 2. The full results are in the Test Execution Report in Confluence.
 
 ## Running it locally
 
