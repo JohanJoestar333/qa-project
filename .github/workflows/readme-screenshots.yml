@@ -1,0 +1,56 @@
+# Rebuilds the app, takes the README screenshots with Playwright and commits
+# them to docs/screenshots/ on the same branch.
+#
+# Runs when the screenshot script or this workflow changes on a docs/* branch,
+# or manually from the Actions tab (Run workflow).
+
+name: README screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'docs/**'
+    paths:
+      - 'scripts/take-screenshots.mjs'
+      - '.github/workflows/readme-screenshots.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install and build the app
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Take screenshots
+        run: |
+          npm run preview -- --port 4173 --strictPort > preview.log 2>&1 &
+          node scripts/take-screenshots.mjs
+
+      - name: Commit screenshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then
+            echo "Screenshots unchanged."
+          else
+            git commit -m "Update README screenshots"
+            git push
+          fi
