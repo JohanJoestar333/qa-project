@@ -55,7 +55,7 @@ The work is split into five epics: Login & Session, Product Catalog, Shopping Ca
 - **Sprint 1** covered everything the first version of the store already did.
 - **Sprint 2** (Oct 16 to 30) adds the product page with colors and sizes, the test cases for every live feature and the start of the Playwright automation.
 
-Each story is split into `[DEV]`, `[TEST]` and `[DOCS]` subtasks. A story isn't finished until it's tested and documented, and the board shows that. Separate tasks cover testing, documentation and automation work, like running the full regression or setting up Playwright.
+Each story has `[DEV]` and `[DOCS]` subtasks. Writing its test cases is a separate `[Testing]` task, linked to the story, because it's real work that's planned and estimated on its own and usually starts before the code is done. Running the tests isn't a separate item: it happens when the story moves to Ready To Test and Test in Staging. Other tasks cover bigger testing, documentation and automation work, like running the full regression or setting up Playwright.
 
 Every story has a **test priority label** from `test-priority-1-critical` to `test-priority-4-low`, so whoever is testing knows where to start. Sign-in, adding to the cart, prices and placing an order are always critical.
 
