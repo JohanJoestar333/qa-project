@@ -21,24 +21,46 @@ export interface PaymentMethod {
   expiration: string;
 }
 
+export interface ProductColor {
+  id: string;
+  name: string;
+  swatch: string;
+  image: string;
+}
+
+export interface ProductSize {
+  id: string;
+  name: string;
+}
+
 export interface Product {
   id: 'PC-001' | 'PC-002' | 'PC-003';
   name: string;
   priceCents: number;
   formattedPrice: string;
   description: string;
+  longDescription: string;
+  details: string[];
+  care: string;
   stock: number;
-  image: string;
+  colors: ProductColor[];
+  sizes: ProductSize[];
   tag?: string;
 }
 
 export interface CartItem {
   product: Product;
+  colorId: string;
+  sizeId: string;
   quantity: number;
 }
 
 export interface OrderItem {
   id: string;
+  colorId: string;
+  colorName: string;
+  sizeId: string;
+  sizeName: string;
   name: string;
   quantity: number;
   unitPriceCents: number;

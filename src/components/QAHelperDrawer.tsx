@@ -9,12 +9,15 @@ import { TAX_RATE_PERCENT } from '../utils/currency';
 
 const CHECKS = [
   'Stock decrements immediately after an order',
+  'Stock is shared by every color and size of a product',
+  'A size must be chosen before adding to the cart',
   'Empty inputs trigger inline validation',
   'Invalid email format shows an error',
   'Unregistered user shows login-error-message',
   'Wrong password shows login-error-message',
   `Tax is ${TAX_RATE_PERCENT}%, calculated in integer cents`,
   'Checkout with an empty cart is blocked',
+  'Emptying the cart asks for confirmation first',
   'After an order the cart is emptied and an order number is generated',
 ];
 
