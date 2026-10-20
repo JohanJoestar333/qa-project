@@ -116,11 +116,18 @@ There's also one end-to-end regression test, **TC-REG-001**. In 22 steps it goes
 
 Next up are the Playwright tests themselves, starting with TC-REG-001, running on GitHub Actions against every preview and required to pass before anything is merged.
 
-## Things I found
+## Release 1.1: test results and bugs
 
-- **Two tabs can oversell (TC-CHK-010).** Stock lives in each tab's browser storage and tabs don't sync, so two tabs can both buy the last 50 hoodies. I expect this test to fail.
-- **No thousands separator.** $1,999.50 is shown as $1999.50.
-- **Black swatch in dark mode.** The black color option is nearly invisible against the dark background.
+Before releasing the product page, colors, sizes and the Empty Cart confirmation, I ran all 128 test cases on staging. **123 passed and 5 failed.** Each failure was logged as a bug with the same template (description, Given / When / Then steps and a video):
+
+| Bug | Priority | Failed tests |
+|---|---|---|
+| **PIXEL-70** Two browser tabs can sell more than the available stock. Each tab keeps its own copy of the stock, so both can buy the last 50 hoodies. | High | TC-CHK-010 |
+| **PIXEL-71** Signing in always goes to Products instead of the page you asked for. | Medium | TC-LOGIN-005, TC-REG-001 step 5 |
+| **PIXEL-69** The Black color swatch is almost invisible in dark mode. | Medium | TC-GEN-006 |
+| **PIXEL-72** Prices of $1,000 or more have no thousands separator ($1999.50). | Low | TC-CART-014 |
+
+None of them blocks buying or charges the wrong amount, and each has a workaround, so the release went out with them listed as known issues. PIXEL-70 is planned for Sprint 2. The full results are in the Test Execution Report in Confluence.
 
 ## Running it locally
 
